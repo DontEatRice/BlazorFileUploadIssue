@@ -24,8 +24,9 @@
         {
             var fileContent = new StreamContent(file.OpenReadStream(long.MaxValue));
             fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+            fileContent.Headers.ContentDisposition = new ContentDispositionHeaderValue("form-data") { Name = "\"Files\"", FileName = $"\"{file.Name}\"" };
             
-            content.Add(fileContent, "File");
+            content.Add(fileContent);
         }
 
         var client = ClientFactory.CreateClient();
@@ -33,7 +34,9 @@
         try
         {
             var response = await client.PostAsync("http://localhost:5284/File/upload", content);
+            var stringContent = await response.Content.ReadAsStringAsync();
             Logger.LogInformation("Response status code: {Code}", response.StatusCode);
+            Logger.LogInformation("Response content: {Content}", stringContent);
         }
         catch (Exception ex)
         {
