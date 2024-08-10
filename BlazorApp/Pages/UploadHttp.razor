@@ -1,0 +1,43 @@
+﻿@page "/upload-http"
+@using System.Net.Http.Headers
+@inject IHttpClientFactory ClientFactory
+@inject ILogger<UploadHttp> Logger
+
+<PageTitle>Upload Http</PageTitle>
+
+<h1>Upload multiple files through Http request</h1>
+
+<p>
+    <label>
+        Upload files:
+        <InputFile OnChange="OnInputFileChange" multiple />
+    </label>
+</p>
+
+@code {
+    private async Task OnInputFileChange(InputFileChangeEventArgs e)
+    {
+        Logger.LogInformation("Detect {Count} files", e.FileCount);
+        using var content = new MultipartFormDataContent();
+
+        foreach (var file in e.GetMultipleFiles())
+        {
+            var fileContent = new StreamContent(file.OpenReadStream(long.MaxValue));
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(file.ContentType);
+            
+            content.Add(fileContent, "File");
+        }
+
+        var client = ClientFactory.CreateClient();
+
+        try
+        {
+            var response = await client.PostAsync("http://localhost:5284/File/upload", content);
+            Logger.LogInformation("Response status code: {Code}", response.StatusCode);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during file upload!");
+        }
+    }
+}
